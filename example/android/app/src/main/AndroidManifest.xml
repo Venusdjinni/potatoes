@@ -1,5 +1,5 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android"
-    package="studio.caelis.potatoes.potatoes_example">
+    package="studio.caelis.potatoes_example">
    <application
         android:label="potatoes_example"
         android:name="${applicationName}"

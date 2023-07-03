@@ -1,4 +1,4 @@
-package studio.caelis.potatoes.potatoes_example;
+package studio.caelis.potatoes_example;
 
 import io.flutter.embedding.android.FlutterActivity;
 

@@ -1,4 +1,4 @@
-package studio.caelis.potatoes.potatoes;
+package studio.caelis.potatoes;
 
 import androidx.annotation.NonNull;
 

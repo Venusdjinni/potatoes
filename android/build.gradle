@@ -1,4 +1,4 @@
-group 'studio.caelis.potatoes.potatoes'
+group 'studio.caelis.potatoes'
 version '1.0'
 
 buildscript {
