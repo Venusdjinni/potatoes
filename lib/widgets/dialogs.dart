@@ -9,7 +9,7 @@ mixin CompletableMixin {
     if (loadingDialogCompleter != null) {
       final loadingDialogContext = await loadingDialogCompleter!.future;
       // ignore: use_build_context_synchronously
-      Navigator.maybePop(loadingDialogContext);
+      Navigator.pop(loadingDialogContext);
       loadingDialogCompleter = null;
     }
   }
