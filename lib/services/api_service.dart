@@ -11,17 +11,36 @@ const String _authHeaderIndicator = 'Authorization';
 abstract class DioClient {
   static Dio newInstance(
     PreferencesService preferences,
-    PackageInfo packageInfo
+    PackageInfo packageInfo,
+    {
+      bool disableStatusesErrors = false,
+      Duration? connectTimeout = const Duration(seconds: 30),
+      Duration? sendTimeout = const Duration(seconds: 50),
+      Duration? receiveTimeout,
+    }
   ) {
     log('running on: ${Links.instance.server}');
 
-    return Dio()
+    final dio = Dio()
       ..options.baseUrl = Links.instance.server
-      ..options.connectTimeout = const Duration(seconds: 30)
-      ..options.receiveTimeout = const Duration(seconds: 50)
+      ..options.connectTimeout = connectTimeout
+      ..options.sendTimeout = sendTimeout
+      ..options.receiveTimeout = receiveTimeout
       ..options.headers['Accept'] = 'application/json'
       ..options.headers['app_version'] = packageInfo.buildNumber
       ..interceptors.add(_ApiInterceptors(preferences));
+
+    if (disableStatusesErrors) {
+      dio.interceptors.add(InterceptorsWrapper(onError: (DioException error, handler) {
+        if (error.response?.statusCode != null) {
+          handler.resolve(error.response!);
+        } else {
+          handler.next(error);
+        }
+      }));
+    }
+
+    return dio;
   }
 }
 
@@ -30,7 +49,7 @@ class _ApiInterceptors extends Interceptor {
 
   _ApiInterceptors(this.preferences);
 
-  Future<Map<String, String>> _getAuth() async {
+  FutureOr<Map<String, String>> _getAuth() {
     return preferences.getAuthHeaders();
   }
 
@@ -45,7 +64,7 @@ class _ApiInterceptors extends Interceptor {
   }
 
   @override
-  void onError(DioError err, ErrorInterceptorHandler handler) {
+  void onError(DioException err, ErrorInterceptorHandler handler) {
     log('API Error on ${err.requestOptions.method} ${err.requestOptions.path}: ${err.message} ${err.response?.data}');
     return super.onError(err, handler);
   }

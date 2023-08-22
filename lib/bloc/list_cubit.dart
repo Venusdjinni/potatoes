@@ -1,0 +1,50 @@
+import 'package:flutter/foundation.dart';
+import 'package:potatoes/bloc/cubit_state.dart';
+import 'package:potatoes/models/paginated_list.dart';
+import 'package:potatoes/utils/libs.dart';
+
+part 'list_state.dart';
+
+typedef DataProvider<T> = Future<PaginatedList<T>> Function({int page});
+
+class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
+  final DataProvider<T> provider;
+
+  AutoLoadCubit({required this.provider}) : super(const AutoLoadingState()) {
+    initialize();
+  }
+
+  @protected
+  void initialize() {
+    provider().then(
+      (result) => emit(AutoLoadedState(result)),
+      onError: (e, t) => emit(AutoLoadErrorState(e, t))
+    );
+  }
+
+  void loadMore() {
+    if (state is AutoLoadingMoreState) return;
+
+    if (state is AutoLoadedState<T>) {
+      final stateBefore = (state as AutoLoadedState<T>);
+      if (stateBefore.items.hasReachedMax) {
+        // plus de page à charger
+        return;
+      }
+      emit(AutoLoadingMoreState(stateBefore.items));
+
+      provider(page: stateBefore.items.page + 1).then(
+        (result) => emit(stateBefore.addAll(result.items)),
+        onError: (e, t) {
+          emit(AutoLoadErrorState(e, t));
+          emit(stateBefore);
+        }
+      );
+    }
+  }
+
+  void reset() {
+    emit(const AutoLoadingState());
+    initialize();
+  }
+}

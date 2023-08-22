@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:flutter/cupertino.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
@@ -17,7 +19,7 @@ abstract class PreferencesService {
 
   Future<void> saveIsFirstRun(bool value) => preferences.setBool('${flavorPrefix()}$_keyIsFirstRun', value);
 
-  Map<String, String> getAuthHeaders();
+  FutureOr<Map<String, String>> getAuthHeaders();
 
   Future<void> clear() async {
     await preferences.clear();

@@ -25,15 +25,15 @@ class CubitLoadingState extends Equatable {
 }
 
 @immutable
-class CubitFailureState extends Equatable {
+class CubitErrorState extends Equatable {
   final dynamic error;
   final StackTrace? trace;
 
   static void record(dynamic error, [StackTrace? trace]) {
-    CubitFailureState(error, trace).recordError();
+    CubitErrorState(error, trace).recordError();
   }
 
-  CubitFailureState(this.error, [this.trace]) {
+  CubitErrorState(this.error, [this.trace]) {
     recordError();
   }
 
