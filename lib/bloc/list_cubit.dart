@@ -1,7 +1,8 @@
+import 'package:equatable/equatable.dart';
 import 'package:flutter/foundation.dart';
+import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:potatoes/bloc/cubit_state.dart';
 import 'package:potatoes/models/paginated_list.dart';
-import 'package:potatoes/utils/libs.dart';
 
 part 'list_state.dart';
 
