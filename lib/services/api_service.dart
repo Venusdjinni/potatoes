@@ -2,6 +2,8 @@ import 'dart:async';
 import 'dart:developer';
 
 import 'package:dio/dio.dart';
+import 'package:equatable/equatable.dart';
+import 'package:flutter/foundation.dart';
 import 'package:package_info_plus/package_info_plus.dart';
 import 'package:potatoes/services/preferences.dart';
 import 'package:potatoes/utils/links.dart';
@@ -82,6 +84,26 @@ abstract class ApiService {
 
   const ApiService(this._dio);
 
+  @protected
+  T defaultExtractResult<T>(
+    Map<String, dynamic> data,
+    String? mapperKey,
+    T Function(Map<String, dynamic>)? mapper,
+    T Function(String)? messageMapper,
+  ) {
+    assert(mapper == null || messageMapper == null);
+    if (messageMapper != null) {
+      return messageMapper(data['message']);
+    }
+    dynamic result = data;
+    if (mapper != null) {
+      result = mapperKey == null ? result : result[mapperKey];
+      return mapper(result);
+    } else {
+      return mapperKey == null ? result : result[mapperKey];
+    }
+  }
+
   Future<T> compute<T>(
     Future<Response> request, {
       String? mapperKey,
@@ -93,4 +115,38 @@ abstract class ApiService {
   // cette methode va signaler à l'interceptor qu'il faut injecter les headers
   // d'authentification
   Map<String, dynamic> withAuth() => <String, String>{_authHeaderIndicator : ''};
+}
+
+class ApiError extends Equatable implements Exception {
+  final DioException? _dio;
+  final String? _message;
+  final StackTrace? _trace;
+  final int _statusCode;
+
+  ApiError.fromDio(DioException dio)
+    : _dio = dio,
+      _message = null,
+      _trace = dio.stackTrace,
+      _statusCode = dio.response?.statusCode ?? -1;
+
+  const ApiError.unknown(String? message, [StackTrace? trace])
+    : _dio = null,
+      _message = message,
+      _trace = trace,
+      _statusCode = -1;
+
+  DioException? get dio => _dio;
+
+  String? get message => _message;
+
+  StackTrace? get trace => _trace;
+
+  int get statusCode => _statusCode;
+
+  bool get isUnauthenticatedError => _statusCode == 401 || _statusCode == 403;
+
+  bool get isNoInternetConnectionError => _statusCode == 503;
+
+  @override
+  List<Object?> get props => [_dio, _trace, _statusCode];
 }
