@@ -15,8 +15,9 @@ mixin CompletableMixin {
   }
 }
 
-Completer<BuildContext> showLoadingBarrier({
+Completer<BuildContext> _showLoadingBarrier({
   required BuildContext context,
+  bool decoration = false,
   String? text
 }) {
   final Completer<BuildContext> completer = Completer();
@@ -32,23 +33,45 @@ Completer<BuildContext> showLoadingBarrier({
 
       return WillPopScope(
         onWillPop: () async => false,
-        child: AlertDialog(
-          content: Row(
-            children: [
-              const CircularProgressIndicator(),
-              const SizedBox(width: 32.0),
-              Expanded(
-                child: Text(
-                  text ?? "Chargement...",
-                  style: Theme.of(context).textTheme.titleSmall
-                )
-              )
-            ],
-          ),
-        ),
+        child: decoration
+          ? AlertDialog(
+              content: Row(
+                children: [
+                  const CircularProgressIndicator(),
+                  const SizedBox(width: 32.0),
+                  Expanded(
+                    child: Text(
+                      text ?? "Chargement...",
+                      style: Theme.of(context).textTheme.titleSmall
+                    )
+                  )
+                ],
+              ),
+            )
+          : const SizedBox(),
       );
     },
   );
 
   return completer;
+}
+
+Completer<BuildContext> showLoadingBarrier({
+  required BuildContext context,
+  String? text
+}) {
+  return _showLoadingBarrier(
+    context: context,
+    decoration: true,
+    text: text
+  );
+}
+
+Completer<BuildContext> showSimpleLoadingBarrier({
+  required BuildContext context
+}) {
+  return _showLoadingBarrier(
+    context: context,
+    decoration: false,
+  );
 }
