@@ -14,6 +14,7 @@ class AutoLoadListView<T> extends StatefulWidget {
   final Widget Function(BuildContext context, T item)? itemBuilder;
   final Widget Function(BuildContext context, List<T> items)? customBuilder;
   final double loadRatio;
+  final WidgetBuilder? loadingBuilder;
   final WidgetBuilder? emptyBuilder;
   final WidgetBuilder? errorBuilder;
   final EdgeInsets? padding;
@@ -30,6 +31,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     Widget Function(BuildContext context, List<T> items)? customBuilder,
     SliverGridDelegate? gridDelegate,
     double loadRatio = 0.8,
+    WidgetBuilder? loadingBuilder,
     WidgetBuilder? emptyBuilder,
     WidgetBuilder? errorBuilder,
     EdgeInsets? padding,
@@ -37,11 +39,13 @@ class AutoLoadListView<T> extends StatefulWidget {
     bool shrinkWrap = false,
   }) {
     final listView = AutoLoadListView._(
+      key: UniqueKey(),
       viewType: viewType,
       itemBuilder: itemBuilder,
       wrapper: wrapper,
       customBuilder: customBuilder,
       loadRatio: loadRatio,
+      loadingBuilder: loadingBuilder,
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       padding: padding,
@@ -52,11 +56,13 @@ class AutoLoadListView<T> extends StatefulWidget {
 
     if (autoManage) {
       return BlocProvider(
+        key: UniqueKey(),
         create: (_) => cubit,
         child: listView,
       );
     } else {
       return BlocProvider.value(
+        key: UniqueKey(),
         value: cubit,
         child: listView,
       );
@@ -70,6 +76,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.wrapper,
     this.customBuilder,
     this.loadRatio = 0.8,
+    this.loadingBuilder,
     this.emptyBuilder,
     this.errorBuilder,
     this.padding,
@@ -113,6 +120,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
         return ListView.builder(
             itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
             itemCount: items.length,
+            padding: EdgeInsets.zero,
             physics: const PageScrollPhysics(),
             shrinkWrap: true
         );
@@ -121,12 +129,31 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
             gridDelegate: widget.gridDelegate!,
             itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
             itemCount: items.length,
+            padding: EdgeInsets.zero,
             physics: const PageScrollPhysics(),
             shrinkWrap: true
         );
       case ViewType.custom:
         return widget.customBuilder!(context, items);
     }
+  }
+
+  Widget errorList({required VoidCallback onRetry}) {
+    return Column(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        Text(
+          'Une erreur est survenue',
+          style: Theme.of(context).textTheme.displayMedium,
+          textAlign: TextAlign.center,
+        ),
+        const SizedBox(height: 16.0),
+        ElevatedButton(
+          onPressed: onRetry,
+          child: const Text("Ré-essayer"),
+        )
+      ],
+    );
   }
 
   @override
@@ -139,10 +166,10 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
         },
         builder: (context, state) {
           if (state is AutoLoadingState) {
-            return const Center(child: CircularProgressIndicator());
+            return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
           }
           if (state is AutoLoadErrorState) {
-            return widget.errorBuilder?.call(context) ?? const Text('error occured');
+            return widget.errorBuilder?.call(context) ?? errorList(onRetry: cubit.reset);
           }
           if (state is AutoLoadedState<T>) {
             final items = state.items;
