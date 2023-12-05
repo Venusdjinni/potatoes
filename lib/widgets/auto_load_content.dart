@@ -3,8 +3,8 @@ import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:potatoes/autoload.dart';
 
 class AutoLoadContent<T> extends StatefulWidget {
-  final Widget Function(BuildContext context, Widget child)? wrapper;
   final Widget Function(BuildContext context, T value) builder;
+  final Widget Function(BuildContext context, SingleLoadState<T> state)? defaultBuilder;
   final WidgetBuilder? loadingBuilder;
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
 
@@ -12,7 +12,7 @@ class AutoLoadContent<T> extends StatefulWidget {
     required SingleLoadCubit<T> cubit,
     bool autoManage = true,
     required Widget Function(BuildContext context, T value) builder,
-    Widget Function(BuildContext context, Widget child)? wrapper,
+    Widget Function(BuildContext context, SingleLoadState<T> state)? defaultBuilder,
     WidgetBuilder? loadingBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder
   }) {
@@ -20,7 +20,7 @@ class AutoLoadContent<T> extends StatefulWidget {
       builder: builder,
       loadingBuilder: loadingBuilder,
       errorBuilder: errorBuilder,
-      wrapper: wrapper,
+      defaultBuilder: defaultBuilder,
     );
 
     if (autoManage) {
@@ -41,7 +41,7 @@ class AutoLoadContent<T> extends StatefulWidget {
     required this.builder,
     this.loadingBuilder,
     this.errorBuilder,
-    this.wrapper
+    this.defaultBuilder
   });
 
   @override
@@ -60,18 +60,16 @@ class _AutoLoadContentState<T> extends State<AutoLoadContent<T>> {
               state is SingleLoadErrorState;
         },
         builder: (context, state) {
-          final Widget child;
           if (state is SingleLoadingState) {
-            child = widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
-          } else if (state is SingleLoadErrorState) {
-            child = widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
-          } else if (state is SingleLoadedState<T>) {
-            child = widget.builder(context, state.value);
-          } else {
-            child = const SizedBox();
+            return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
           }
-
-          return widget.wrapper?.call(context, child) ?? child;
+          if (state is SingleLoadErrorState) {
+            return widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
+          }
+          if (state is SingleLoadedState<T>) {
+            return widget.builder(context, state.value);
+          }
+          return widget.defaultBuilder?.call(context, state) ?? const SizedBox();
         }
     );
   }

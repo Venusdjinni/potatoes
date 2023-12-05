@@ -15,7 +15,8 @@ class AutoLoadListView<T> extends StatefulWidget {
   final Widget Function(BuildContext context, List<T> items)? customBuilder;
   final double loadRatio;
   final WidgetBuilder? emptyBuilder;
-  final WidgetBuilder? errorBuilder;
+  final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
+  final Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder;
   final EdgeInsets? padding;
   final ScrollPhysics? physics;
   final bool shrinkWrap;
@@ -31,7 +32,8 @@ class AutoLoadListView<T> extends StatefulWidget {
     SliverGridDelegate? gridDelegate,
     double loadRatio = 0.8,
     WidgetBuilder? emptyBuilder,
-    WidgetBuilder? errorBuilder,
+    Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
+    Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
     EdgeInsets? padding,
     ScrollPhysics? physics,
     bool shrinkWrap = false,
@@ -44,6 +46,7 @@ class AutoLoadListView<T> extends StatefulWidget {
       loadRatio: loadRatio,
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
+      defaultBuilder: defaultBuilder,
       padding: padding,
       physics: physics,
       shrinkWrap: shrinkWrap,
@@ -72,6 +75,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.loadRatio = 0.8,
     this.emptyBuilder,
     this.errorBuilder,
+    this.defaultBuilder,
     this.padding,
     this.physics,
     this.shrinkWrap = false,
@@ -142,7 +146,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
             return const Center(child: CircularProgressIndicator());
           }
           if (state is AutoLoadErrorState) {
-            return widget.errorBuilder?.call(context) ?? const Text('error occured');
+            return widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
           }
           if (state is AutoLoadedState<T>) {
             final items = state.items;
@@ -166,7 +170,8 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
             return widget.wrapper?.call(context, child) ?? child;
           }
 
-          return const SizedBox();
+          final defaultWidget = widget.defaultBuilder?.call(context, state) ?? const SizedBox();
+          return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
         }
     );
   }
