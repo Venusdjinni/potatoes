@@ -12,9 +12,11 @@ class AutoLoadListView<T> extends StatefulWidget {
   final ViewType viewType;
   final Widget Function(BuildContext context, Widget child)? wrapper;
   final Widget Function(BuildContext context, T item)? itemBuilder;
+  final Widget Function(BuildContext context, int index)? separatorBuilder;
   final Widget Function(BuildContext context, List<T> items)? customBuilder;
   final double loadRatio;
   final WidgetBuilder? loadingBuilder;
+  final WidgetBuilder? loadingMoreBuilder;
   final WidgetBuilder? emptyBuilder;
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
   final Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder;
@@ -28,11 +30,13 @@ class AutoLoadListView<T> extends StatefulWidget {
     required AutoLoadCubit<T> cubit,
     bool autoManage = true,
     Widget Function(BuildContext context, T item)? itemBuilder,
+    Widget Function(BuildContext context, int index)? separatorBuilder,
     Widget Function(BuildContext context, Widget child)? wrapper,
     Widget Function(BuildContext context, List<T> items)? customBuilder,
     SliverGridDelegate? gridDelegate,
     double loadRatio = 0.8,
     WidgetBuilder? loadingBuilder,
+    WidgetBuilder? loadingMoreBuilder,
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
@@ -43,10 +47,12 @@ class AutoLoadListView<T> extends StatefulWidget {
     final listView = AutoLoadListView._(
       viewType: viewType,
       itemBuilder: itemBuilder,
+      separatorBuilder: separatorBuilder,
       wrapper: wrapper,
       customBuilder: customBuilder,
       loadRatio: loadRatio,
       loadingBuilder: loadingBuilder,
+      loadingMoreBuilder: loadingMoreBuilder,
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
@@ -73,10 +79,12 @@ class AutoLoadListView<T> extends StatefulWidget {
     super.key,
     this.viewType = ViewType.list,
     required this.itemBuilder,
+    this.separatorBuilder,
     this.wrapper,
     this.customBuilder,
     this.loadRatio = 0.8,
     this.loadingBuilder,
+    this.loadingMoreBuilder,
     this.emptyBuilder,
     this.errorBuilder,
     this.defaultBuilder,
@@ -118,8 +126,9 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
   Widget contentView(List<T> items) {
     switch (widget.viewType) {
       case ViewType.list:
-        return ListView.builder(
+        return ListView.separated(
           itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
+          separatorBuilder: widget.separatorBuilder ?? (_, i) => const SizedBox(),
           itemCount: items.length,
           physics: const PageScrollPhysics(),
           shrinkWrap: true
@@ -167,7 +176,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
               children: [
                 contentView(items.items),
                 if (state is AutoLoadingMoreState)
-                  const Center(child: CircularProgressIndicator()),
+                  widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
               ],
             );
 
