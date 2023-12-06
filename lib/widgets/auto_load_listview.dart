@@ -14,6 +14,7 @@ class AutoLoadListView<T> extends StatefulWidget {
   final Widget Function(BuildContext context, T item)? itemBuilder;
   final Widget Function(BuildContext context, List<T> items)? customBuilder;
   final double loadRatio;
+  final WidgetBuilder? loadingBuilder;
   final WidgetBuilder? emptyBuilder;
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
   final Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder;
@@ -31,6 +32,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     Widget Function(BuildContext context, List<T> items)? customBuilder,
     SliverGridDelegate? gridDelegate,
     double loadRatio = 0.8,
+    WidgetBuilder? loadingBuilder,
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
@@ -44,6 +46,7 @@ class AutoLoadListView<T> extends StatefulWidget {
       wrapper: wrapper,
       customBuilder: customBuilder,
       loadRatio: loadRatio,
+      loadingBuilder: loadingBuilder,
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
@@ -73,6 +76,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.wrapper,
     this.customBuilder,
     this.loadRatio = 0.8,
+    this.loadingBuilder,
     this.emptyBuilder,
     this.errorBuilder,
     this.defaultBuilder,
@@ -115,18 +119,18 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
     switch (widget.viewType) {
       case ViewType.list:
         return ListView.builder(
-            itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
-            itemCount: items.length,
-            physics: const PageScrollPhysics(),
-            shrinkWrap: true
+          itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
+          itemCount: items.length,
+          physics: const PageScrollPhysics(),
+          shrinkWrap: true
         );
       case ViewType.grid:
         return GridView.builder(
-            gridDelegate: widget.gridDelegate!,
-            itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
-            itemCount: items.length,
-            physics: const PageScrollPhysics(),
-            shrinkWrap: true
+          gridDelegate: widget.gridDelegate!,
+          itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
+          itemCount: items.length,
+          physics: const PageScrollPhysics(),
+          shrinkWrap: true
         );
       case ViewType.custom:
         return widget.customBuilder!(context, items);
@@ -143,7 +147,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
         },
         builder: (context, state) {
           if (state is AutoLoadingState) {
-            return const Center(child: CircularProgressIndicator());
+            return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
           }
           if (state is AutoLoadErrorState) {
             return widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
