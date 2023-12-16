@@ -1,10 +1,13 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 
 abstract class CubitManager<C extends Cubit, T, I> {
   final Map<I, C> _cubits = {};
 
+  @protected
   C create(T object);
 
+  @protected
   I buildId(T object);
 
   void updateCubit(C cubit, T object);

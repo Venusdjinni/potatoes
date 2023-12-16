@@ -15,6 +15,10 @@ class AutoLoadedState<T> extends CubitSuccessState with AutoLoadState<T> {
     return AutoLoadedState(items.add(others: others));
   }
 
+  AutoLoadedState<T> prependAll(List<T> others) {
+    return AutoLoadedState(items.prepend(others: others));
+  }
+
   @override
   List<Object?> get props => [items];
 }

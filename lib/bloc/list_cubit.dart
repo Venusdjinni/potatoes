@@ -9,10 +9,18 @@ part 'list_state.dart';
 typedef DataProvider<T> = Future<PaginatedList<T>> Function({int page});
 
 class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
-  final DataProvider<T> provider;
+  final DataProvider<T> baseProvider;
 
-  AutoLoadCubit({required this.provider}) : super(const AutoLoadingState()) {
+  AutoLoadCubit({required DataProvider<T> provider})
+    : baseProvider = provider,
+    super(const AutoLoadingState())
+  {
     initialize();
+  }
+
+  @protected
+  DataProvider<T> get provider {
+    return baseProvider;
   }
 
   @protected

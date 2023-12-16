@@ -34,9 +34,20 @@ class PaginatedList<T> extends Equatable {
     int? page
   }) {
     return PaginatedList(
-      items: others,
+      items: [..._items, ...others],
       page: page ?? (this.page + 1),
-      total: total
+      total: total + others.length
+    );
+  }
+
+  PaginatedList<T> prepend({
+    required Iterable<T> others,
+    int? page
+  }) {
+    return PaginatedList(
+      items: [...others, ..._items],
+      page: page ?? (this.page + 1),
+      total: total + others.length
     );
   }
 

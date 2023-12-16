@@ -22,6 +22,8 @@ class AutoLoadListView<T> extends StatefulWidget {
   final Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder;
   final EdgeInsets? padding;
   final ScrollPhysics? physics;
+  final bool reverse;
+  final Axis scrollDirection;
   final bool shrinkWrap;
   final SliverGridDelegate? gridDelegate;
 
@@ -42,6 +44,8 @@ class AutoLoadListView<T> extends StatefulWidget {
     Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
     EdgeInsets? padding,
     ScrollPhysics? physics,
+    bool reverse = false,
+    Axis scrollDirection = Axis.vertical,
     bool shrinkWrap = false,
   }) {
     final listView = AutoLoadListView._(
@@ -58,6 +62,8 @@ class AutoLoadListView<T> extends StatefulWidget {
       defaultBuilder: defaultBuilder,
       padding: padding,
       physics: physics,
+      reverse: reverse,
+      scrollDirection: scrollDirection,
       shrinkWrap: shrinkWrap,
       gridDelegate: gridDelegate,
     );
@@ -90,6 +96,8 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.defaultBuilder,
     this.padding,
     this.physics,
+    this.reverse = false,
+    this.scrollDirection = Axis.vertical,
     this.shrinkWrap = false,
     this.gridDelegate
   }) {
@@ -115,10 +123,18 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
   void initState() {
     super.initState();
     controller.addListener(() {
+      if (!controller.hasClients) return;
       final maxScroll = controller.position.maxScrollExtent;
-      if (controller.hasClients && controller.offset >= (maxScroll * widget.loadRatio)) {
-        // chargement d'élements supplémentaires
-        cubit.loadMore();
+      if (widget.reverse) {
+        if (controller.offset <= (maxScroll * (1 - widget.loadRatio))) {
+          // chargement d'élements supplémentaires
+          cubit.loadMore();
+        }
+      } else {
+        if (controller.hasClients && controller.offset >= (maxScroll * widget.loadRatio)) {
+          // chargement d'élements supplémentaires
+          cubit.loadMore();
+        }
       }
     });
   }
@@ -172,6 +188,8 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
               controller: controller,
               padding: widget.padding,
               physics: widget.physics,
+              reverse: widget.reverse,
+              scrollDirection: widget.scrollDirection,
               shrinkWrap: widget.shrinkWrap,
               children: [
                 contentView(items.items),
