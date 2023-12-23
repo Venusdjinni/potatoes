@@ -52,5 +52,5 @@ class PaginatedList<T> extends Equatable {
   }
 
   @override
-  List<Object?> get props => [items, page, total];
+  List<Object?> get props => [_items, page, total];
 }
