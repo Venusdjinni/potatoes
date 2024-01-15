@@ -24,7 +24,6 @@ class AutoLoadListView<T> extends StatefulWidget {
   final ScrollPhysics? physics;
   final bool reverse;
   final Axis scrollDirection;
-  final bool shrinkWrap;
   final SliverGridDelegate? gridDelegate;
 
   static Widget get<T>({
@@ -46,7 +45,6 @@ class AutoLoadListView<T> extends StatefulWidget {
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
-    bool shrinkWrap = false,
   }) {
     final listView = AutoLoadListView._(
       viewType: viewType,
@@ -64,7 +62,6 @@ class AutoLoadListView<T> extends StatefulWidget {
       physics: physics,
       reverse: reverse,
       scrollDirection: scrollDirection,
-      shrinkWrap: shrinkWrap,
       gridDelegate: gridDelegate,
     );
 
@@ -98,7 +95,6 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.physics,
     this.reverse = false,
     this.scrollDirection = Axis.vertical,
-    this.shrinkWrap = false,
     this.gridDelegate
   }) {
     assert(0 < loadRatio && loadRatio <= 1);
@@ -117,27 +113,6 @@ class AutoLoadListView<T> extends StatefulWidget {
 
 class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
   late final AutoLoadCubit<T> cubit = context.read();
-  final ScrollController controller = ScrollController();
-
-  @override
-  void initState() {
-    super.initState();
-    controller.addListener(() {
-      if (!controller.hasClients) return;
-      final maxScroll = controller.position.maxScrollExtent;
-      if (widget.reverse) {
-        if (controller.offset <= (maxScroll * (1 - widget.loadRatio))) {
-          // chargement d'élements supplémentaires
-          cubit.loadMore();
-        }
-      } else {
-        if (controller.hasClients && controller.offset >= (maxScroll * widget.loadRatio)) {
-          // chargement d'élements supplémentaires
-          cubit.loadMore();
-        }
-      }
-    });
-  }
 
   Widget contentView(List<T> items) {
     switch (widget.viewType) {
@@ -184,18 +159,33 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
               final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
               return widget.wrapper?.call(context, child) ?? child;
             }
-            final child = ListView(
-              controller: controller,
-              padding: widget.padding,
-              physics: widget.physics,
-              reverse: widget.reverse,
-              scrollDirection: widget.scrollDirection,
-              shrinkWrap: widget.shrinkWrap,
-              children: [
-                contentView(items.items),
-                if (state is AutoLoadingMoreState)
-                  widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
-              ],
+            final child = NotificationListener<ScrollNotification>(
+              onNotification: (n) {
+                final maxScroll = n.metrics.maxScrollExtent;
+                if (widget.reverse) {
+                  if (n.metrics.pixels <= (maxScroll * (1 - widget.loadRatio))) {
+                    // chargement d'élements supplémentaires
+                    cubit.loadMore();
+                  }
+                } else {
+                  if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
+                    // chargement d'élements supplémentaires
+                    cubit.loadMore();
+                  }
+                }
+                return true;
+              },
+              child: ListView(
+                padding: widget.padding,
+                physics: widget.physics,
+                reverse: widget.reverse,
+                scrollDirection: widget.scrollDirection,
+                children: [
+                  contentView(items.items),
+                  if (state is AutoLoadingMoreState)
+                    widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
+                ],
+              ),
             );
 
             return widget.wrapper?.call(context, child) ?? child;
@@ -205,11 +195,5 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
           return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
         }
     );
-  }
-
-  @override
-  void dispose() {
-    controller.dispose();
-    super.dispose();
   }
 }

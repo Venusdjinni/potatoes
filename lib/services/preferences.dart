@@ -9,8 +9,7 @@ abstract class PreferencesService {
   @protected
   final SharedPreferences preferences;
 
-  const PreferencesService(SharedPreferences preferences)
-    : preferences = preferences;
+  const PreferencesService(this.preferences);
 
   @protected
   String flavorPrefix() {
@@ -33,8 +32,7 @@ abstract class SecuredPreferencesService extends PreferencesService {
   @protected
   final FlutterSecureStorage secureStorage;
 
-  const SecuredPreferencesService(super.preferences, FlutterSecureStorage secureStorage)
-    : secureStorage = secureStorage;
+  const SecuredPreferencesService(super.preferences, this.secureStorage);
 
   @override
   Future<void> clear() async {
