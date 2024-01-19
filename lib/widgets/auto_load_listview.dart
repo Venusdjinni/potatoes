@@ -122,6 +122,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
           separatorBuilder: widget.separatorBuilder ?? (_, i) => const SizedBox(),
           itemCount: items.length,
           physics: const PageScrollPhysics(),
+          scrollDirection: widget.scrollDirection,
           shrinkWrap: true
         );
       case ViewType.grid:
@@ -130,6 +131,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
           itemBuilder: (c, i) => widget.itemBuilder!(c, items[i]),
           itemCount: items.length,
           physics: const PageScrollPhysics(),
+          scrollDirection: widget.scrollDirection,
           shrinkWrap: true
         );
       case ViewType.custom:

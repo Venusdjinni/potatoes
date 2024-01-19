@@ -19,6 +19,10 @@ class AutoLoadedState<T> extends CubitSuccessState with AutoLoadState<T> {
     return AutoLoadedState(items.prepend(others: others));
   }
 
+  AutoLoadedState<T> remove(T item) {
+    return AutoLoadedState(items.remove(item));
+  }
+
   @override
   List<Object?> get props => [items];
 }

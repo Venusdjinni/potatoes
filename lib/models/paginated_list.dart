@@ -51,6 +51,14 @@ class PaginatedList<T> extends Equatable {
     );
   }
 
+  PaginatedList<T> remove(T item) {
+    return PaginatedList(
+      items: List.of(items)..remove(item),
+      page: page,
+      total: total
+    );
+  }
+
   @override
   List<Object?> get props => [_items, page, total];
 }
