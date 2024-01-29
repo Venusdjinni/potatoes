@@ -8,12 +8,19 @@ enum ViewType {
   custom
 }
 
+enum DisplayMode {
+  auto,
+  manual
+}
+
 class AutoLoadListView<T> extends StatefulWidget {
   final ViewType viewType;
   final Widget Function(BuildContext context, Widget child)? wrapper;
   final Widget Function(BuildContext context, T item)? itemBuilder;
   final Widget Function(BuildContext context, int index)? separatorBuilder;
   final Widget Function(BuildContext context, List<T> items)? customBuilder;
+  final DisplayMode displayMode;
+  final Widget Function(BuildContext context, VoidCallback load)? manualLoadMoreBuilder;
   final double loadRatio;
   final WidgetBuilder? loadingBuilder;
   final WidgetBuilder? loadingMoreBuilder;
@@ -24,7 +31,22 @@ class AutoLoadListView<T> extends StatefulWidget {
   final ScrollPhysics? physics;
   final bool reverse;
   final Axis scrollDirection;
+  final bool shrinkWrap;
   final SliverGridDelegate? gridDelegate;
+
+  static Widget _init<T>(bool autoManage, AutoLoadCubit<T> cubit, Widget child) {
+    if (autoManage) {
+      return BlocProvider(
+        create: (_) => cubit,
+        child: child,
+      );
+    } else {
+      return BlocProvider.value(
+        value: cubit,
+        child: child,
+      );
+    }
+  }
 
   static Widget get<T>({
     ViewType viewType = ViewType.list,
@@ -52,6 +74,7 @@ class AutoLoadListView<T> extends StatefulWidget {
       separatorBuilder: separatorBuilder,
       wrapper: wrapper,
       customBuilder: customBuilder,
+      displayMode: DisplayMode.auto,
       loadRatio: loadRatio,
       loadingBuilder: loadingBuilder,
       loadingMoreBuilder: loadingMoreBuilder,
@@ -62,20 +85,56 @@ class AutoLoadListView<T> extends StatefulWidget {
       physics: physics,
       reverse: reverse,
       scrollDirection: scrollDirection,
+      shrinkWrap: false,
       gridDelegate: gridDelegate,
     );
 
-    if (autoManage) {
-      return BlocProvider(
-        create: (_) => cubit,
-        child: listView,
-      );
-    } else {
-      return BlocProvider.value(
-        value: cubit,
-        child: listView,
-      );
-    }
+    return _init(autoManage, cubit, listView);
+  }
+
+  static Widget manual<T>({
+    ViewType viewType = ViewType.list,
+    required AutoLoadCubit<T> cubit,
+    bool autoManage = true,
+    Widget Function(BuildContext context, T item)? itemBuilder,
+    Widget Function(BuildContext context, int index)? separatorBuilder,
+    Widget Function(BuildContext context, Widget child)? wrapper,
+    Widget Function(BuildContext context, List<T> items)? customBuilder,
+    SliverGridDelegate? gridDelegate,
+    Widget Function(BuildContext context, VoidCallback retry)? manualLoadMoreBuilder,
+    WidgetBuilder? loadingBuilder,
+    WidgetBuilder? loadingMoreBuilder,
+    WidgetBuilder? emptyBuilder,
+    Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
+    Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
+    EdgeInsets? padding,
+    ScrollPhysics? physics,
+    bool reverse = false,
+    Axis scrollDirection = Axis.vertical,
+    bool shrinkWrap = false
+  }) {
+    final listView = AutoLoadListView._(
+      viewType: viewType,
+      itemBuilder: itemBuilder,
+      separatorBuilder: separatorBuilder,
+      wrapper: wrapper,
+      customBuilder: customBuilder,
+      displayMode: DisplayMode.manual,
+      manualLoadMoreBuilder: manualLoadMoreBuilder,
+      loadingBuilder: loadingBuilder,
+      loadingMoreBuilder: loadingMoreBuilder,
+      emptyBuilder: emptyBuilder,
+      errorBuilder: errorBuilder,
+      defaultBuilder: defaultBuilder,
+      padding: padding,
+      physics: physics,
+      reverse: reverse,
+      scrollDirection: scrollDirection,
+      shrinkWrap: shrinkWrap,
+      gridDelegate: gridDelegate,
+    );
+
+    return _init(autoManage, cubit, listView);
   }
 
   AutoLoadListView._({
@@ -85,6 +144,8 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.separatorBuilder,
     this.wrapper,
     this.customBuilder,
+    this.displayMode = DisplayMode.auto,
+    this.manualLoadMoreBuilder,
     this.loadRatio = 0.8,
     this.loadingBuilder,
     this.loadingMoreBuilder,
@@ -95,9 +156,13 @@ class AutoLoadListView<T> extends StatefulWidget {
     this.physics,
     this.reverse = false,
     this.scrollDirection = Axis.vertical,
+    this.shrinkWrap = false,
     this.gridDelegate
   }) {
     assert(0 < loadRatio && loadRatio <= 1);
+    if (displayMode == DisplayMode.manual) {
+      assert(manualLoadMoreBuilder != null);
+    }
     if (viewType == ViewType.list) {
       assert(itemBuilder != null);
     } else if (viewType == ViewType.grid) {
@@ -163,34 +228,56 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
               final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
               return widget.wrapper?.call(context, child) ?? child;
             }
-            final child = NotificationListener<ScrollNotification>(
-              onNotification: (n) {
-                final maxScroll = n.metrics.maxScrollExtent;
-                if (widget.reverse) {
-                  if (n.metrics.pixels <= (maxScroll * (1 - widget.loadRatio))) {
-                    // chargement d'élements supplémentaires
-                    cubit.loadMore();
-                  }
-                } else {
-                  if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
-                    // chargement d'élements supplémentaires
-                    cubit.loadMore();
-                  }
-                }
-                return true;
-              },
-              child: ListView(
-                padding: widget.padding,
-                physics: widget.physics,
-                reverse: widget.reverse,
-                scrollDirection: widget.scrollDirection,
-                children: [
-                  contentView(items.items),
-                  if (state is AutoLoadingMoreState)
-                    widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
-                ],
-              ),
-            );
+            final Widget child;
+
+            switch (widget.displayMode) {
+              case DisplayMode.auto:
+                child = NotificationListener<ScrollNotification>(
+                  onNotification: (n) {
+                    final maxScroll = n.metrics.maxScrollExtent;
+                    if (widget.reverse) {
+                      if (n.metrics.pixels <= (maxScroll * (1 - widget.loadRatio))) {
+                        // chargement d'élements supplémentaires
+                        cubit.loadMore();
+                      }
+                    } else {
+                      if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
+                        // chargement d'élements supplémentaires
+                        cubit.loadMore();
+                      }
+                    }
+                    return true;
+                  },
+                  child: ListView(
+                    padding: widget.padding,
+                    physics: widget.physics,
+                    reverse: widget.reverse,
+                    scrollDirection: widget.scrollDirection,
+                    children: [
+                      contentView(items.items),
+                      if (state is AutoLoadingMoreState)
+                        widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
+                    ],
+                  ),
+                );
+                break;
+              case DisplayMode.manual:
+                child = ListView(
+                  padding: widget.padding,
+                  physics: widget.physics,
+                  shrinkWrap: true,
+                  reverse: widget.reverse,
+                  scrollDirection: widget.scrollDirection,
+                  children: [
+                    contentView(items.items),
+                    if (!state.items.hasReachedMax && state is! AutoLoadingMoreState)
+                      widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
+                    if (state is AutoLoadingMoreState)
+                      widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
+                  ],
+                );
+                break;
+            }
 
             return widget.wrapper?.call(context, child) ?? child;
           }
