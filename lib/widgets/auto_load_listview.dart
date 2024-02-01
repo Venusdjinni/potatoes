@@ -67,6 +67,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
+    bool shrinkWrap = false
   }) {
     final listView = AutoLoadListView._(
       viewType: viewType,
@@ -85,7 +86,7 @@ class AutoLoadListView<T> extends StatefulWidget {
       physics: physics,
       reverse: reverse,
       scrollDirection: scrollDirection,
-      shrinkWrap: false,
+      shrinkWrap: shrinkWrap,
       gridDelegate: gridDelegate,
     );
 
@@ -253,6 +254,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                   child: ListView(
                     padding: widget.padding,
                     physics: widget.physics,
+                    shrinkWrap: widget.shrinkWrap,
                     reverse: widget.reverse,
                     scrollDirection: widget.scrollDirection,
                     children: [
