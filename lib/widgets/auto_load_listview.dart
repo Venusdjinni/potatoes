@@ -246,7 +246,9 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                         cubit.loadMore();
                       }
                     }
-                    return true;
+                    // we don't want to cancel notification bubbling, since
+                    // upper widgets may want to listen to them
+                    return false;
                   },
                   child: ListView(
                     padding: widget.padding,
@@ -265,7 +267,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                 child = ListView(
                   padding: widget.padding,
                   physics: widget.physics,
-                  shrinkWrap: true,
+                  shrinkWrap: widget.shrinkWrap,
                   reverse: widget.reverse,
                   scrollDirection: widget.scrollDirection,
                   children: [
