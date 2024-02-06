@@ -6,7 +6,7 @@ import 'package:potatoes/bloc/cubit_state.dart';
 part 'single_state.dart';
 
 class SingleLoadCubit<T> extends Cubit<SingleLoadState<T>> {
-  final Future<T> provider;
+  final Future<T> Function() provider;
 
   SingleLoadCubit({required this.provider}) : super(const SingleLoadingState()) {
     initialize();
@@ -14,7 +14,7 @@ class SingleLoadCubit<T> extends Cubit<SingleLoadState<T>> {
 
   @protected
   void initialize() {
-    provider.then(
+    provider().then(
       (result) => emit(SingleLoadedState(result)),
       onError: (e, t) => emit(SingleLoadErrorState(e, t))
     );
