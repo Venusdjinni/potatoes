@@ -31,31 +31,36 @@ class PaginatedList<T> extends Equatable {
 
   PaginatedList<T> add({
     required Iterable<T> others,
-    int? page
+    int? page,
+    int? total,
   }) {
     return PaginatedList(
       items: [..._items, ...others],
-      page: page ?? (this.page + 1),
-      total: total
+      page: page ?? this.page,
+      total: total ?? (this.total)
     );
   }
 
   PaginatedList<T> prepend({
     required Iterable<T> others,
-    int? page
+    int? page,
+    int? total,
   }) {
     return PaginatedList(
       items: [...others, ..._items],
-      page: page ?? (this.page + 1),
-      total: total
+      page: page ?? this.page,
+      total: total ?? (this.total)
     );
   }
 
-  PaginatedList<T> remove(T item) {
+  PaginatedList<T> remove(
+    T item,
+    {bool update = false}
+  ) {
     return PaginatedList(
       items: List.of(items)..remove(item),
       page: page,
-      total: total
+      total: total - (update ? 1 : 0)
     );
   }
 

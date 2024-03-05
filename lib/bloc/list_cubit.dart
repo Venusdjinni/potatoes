@@ -56,7 +56,11 @@ class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
       }
       emit(AutoLoadingMoreState(stateBefore.items));
 
-      void onSuccess(result) => emit(stateBefore.addAll(result.items));
+      void onSuccess(result) => emit(stateBefore.addAll(
+        result.items,
+        page: result.page,
+        total: result.total
+      ));
       void onError(e, t) => emit(AutoLoadErrorState(e, t));
 
       if (provider is DataProvider) {
