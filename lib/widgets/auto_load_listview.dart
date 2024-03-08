@@ -236,19 +236,12 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                 child = NotificationListener<ScrollNotification>(
                   onNotification: (n) {
                     final maxScroll = n.metrics.maxScrollExtent;
-                    if (widget.reverse) {
-                      if (n.metrics.pixels <= (maxScroll * (1 - widget.loadRatio))) {
-                        // chargement d'élements supplémentaires
-                        cubit.loadMore();
-                      }
-                    } else {
-                      if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
-                        // chargement d'élements supplémentaires
-                        cubit.loadMore();
-                      }
+                    if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
+                      // chargement d'élements supplémentaires
+                      cubit.loadMore();
                     }
                     // we don't want to cancel notification bubbling, since
-                    // upper widgets may want to listen to them
+                    // upper widgets may want to listen to events
                     return false;
                   },
                   child: ListView(
