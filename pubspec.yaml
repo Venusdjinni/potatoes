@@ -1,6 +1,6 @@
 name: potatoes
 description: Potatoes or french fries?
-version: 2.1.0
+version: 2.3.0
 homepage: https://www.caelis-tech.studio
 
 environment:
@@ -10,12 +10,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.3.3
+  dio: ^5.4.0
   equatable: ^2.0.5
   flutter_bloc: ^8.1.3
   flutter_secure_storage: ^9.0.0
   package_info_plus: ^4.1.0
-  shared_preferences: ^2.2.1
+  shared_preferences: ^2.2.2
 
 dev_dependencies:
   flutter_test:

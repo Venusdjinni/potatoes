@@ -8,19 +8,41 @@ part 'list_state.dart';
 
 typedef DataProvider<T> = Future<PaginatedList<T>> Function({int page});
 
-class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
-  final DataProvider<T> provider;
+typedef StreamDataProvider<T> = Stream<PaginatedList<T>> Function({int page});
 
-  AutoLoadCubit({required this.provider}) : super(const AutoLoadingState()) {
+class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
+  /// [dataProvider] is either a regular [DataProvider] or a [StreamDataProvider]
+  final dynamic baseProvider;
+
+  AutoLoadCubit({required DataProvider<T> provider})
+    : baseProvider = provider,
+    super(const AutoLoadingState())
+  {
+    initialize();
+  }
+
+  AutoLoadCubit.stream({required StreamDataProvider<T> provider})
+    : baseProvider = provider,
+    super(const AutoLoadingState())
+  {
     initialize();
   }
 
   @protected
+  dynamic get provider {
+    return baseProvider;
+  }
+
+  @protected
   void initialize() {
-    provider().then(
-      (result) => emit(AutoLoadedState(result)),
-      onError: (e, t) => emit(AutoLoadErrorState(e, t))
-    );
+    void onSuccess(result) => emit(AutoLoadedState(result));
+    void onError(e, t) => emit(AutoLoadErrorState(e, t));
+
+    if (provider is DataProvider<T>) {
+      (provider as DataProvider).call().then(onSuccess, onError: onError);
+    } else if (provider is StreamDataProvider) {
+      (provider as StreamDataProvider).call().listen(onSuccess, onError: onError);
+    }
   }
 
   void loadMore() {
@@ -34,13 +56,22 @@ class AutoLoadCubit<T> extends Cubit<AutoLoadState<T>> {
       }
       emit(AutoLoadingMoreState(stateBefore.items));
 
-      provider(page: stateBefore.items.page + 1).then(
-        (result) => emit(stateBefore.addAll(result.items)),
-        onError: (e, t) {
-          emit(AutoLoadErrorState(e, t));
-          emit(stateBefore);
-        }
-      );
+      void onSuccess(result) => emit(stateBefore.addAll(
+        result.items,
+        page: result.page,
+        total: result.total
+      ));
+      void onError(e, t) => emit(AutoLoadErrorState(e, t));
+
+      if (provider is DataProvider) {
+        (provider as DataProvider)
+          .call(page: stateBefore.items.page + 1)
+          .then(onSuccess, onError: onError);
+      } else if (provider is StreamDataProvider) {
+        (provider as StreamDataProvider)
+          .call(page: stateBefore.items.page + 1)
+          .listen(onSuccess, onError: onError);
+      }
     }
   }
 

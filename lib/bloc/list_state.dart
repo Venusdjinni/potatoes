@@ -11,8 +11,16 @@ class AutoLoadedState<T> extends CubitSuccessState with AutoLoadState<T> {
 
   const AutoLoadedState(this.items);
 
-  AutoLoadedState<T> addAll(List<T> others) {
-    return AutoLoadedState(items.add(others: others));
+  AutoLoadedState<T> addAll(List<T> others, {int? page, int? total}) {
+    return AutoLoadedState(items.add(others: others, page: page, total: total));
+  }
+
+  AutoLoadedState<T> prependAll(List<T> others, {int? page, int? total}) {
+    return AutoLoadedState(items.prepend(others: others, page: page, total: total));
+  }
+
+  AutoLoadedState<T> remove(T item, {bool update = false}) {
+    return AutoLoadedState(items.remove(item, update: update));
   }
 
   @override

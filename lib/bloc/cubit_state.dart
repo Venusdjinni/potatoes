@@ -1,3 +1,4 @@
+import 'dart:async';
 import 'dart:developer';
 
 import 'package:equatable/equatable.dart';
@@ -29,6 +30,10 @@ class CubitErrorState extends Equatable {
   final dynamic error;
   final StackTrace? trace;
 
+  static final _controller = StreamController<CubitErrorState>.broadcast();
+
+  static Stream<CubitErrorState> stream() => _controller.stream;
+
   static void record(dynamic error, [StackTrace? trace]) {
     CubitErrorState(error, trace).recordError();
   }
@@ -41,6 +46,7 @@ class CubitErrorState extends Equatable {
   void recordError() {
     log(error.toString(), stackTrace: trace);
     /// add error recording behavior
+    _controller.add(this);
   }
 
   @override
