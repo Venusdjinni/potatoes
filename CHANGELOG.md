@@ -1,5 +1,5 @@
-## 0.0.1
+## 3.0.0
 
-* Added global Cubit States
-* Added abstract ApiService
-* Added Links interface
+* Full refactoring
+* Added documentation and examples
+* Updated license

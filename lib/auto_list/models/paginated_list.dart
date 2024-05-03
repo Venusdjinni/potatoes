@@ -2,6 +2,13 @@ import 'dart:collection';
 
 import 'package:equatable/equatable.dart';
 
+/// [PaginatedList] is a representation of a portion of a bigger list at
+/// a given time. This is used to track a remote list while locally supporting
+/// only a small portion of data.
+/// - [items] is the current list of fetched data. [items]'s length is lesser
+/// or equals to [total]
+/// - [page] is the last tracked page of the remote list
+/// - [total] is the length of the remote list
 class PaginatedList<T> extends Equatable {
   final List<T> _items;
   final int page;
@@ -9,6 +16,7 @@ class PaginatedList<T> extends Equatable {
 
   List<T> get items => UnmodifiableListView(_items);
 
+  /// whether the local list is the same length as the remote list
   bool get hasReachedMax => items.length == total;
 
   PaginatedList({
@@ -17,18 +25,8 @@ class PaginatedList<T> extends Equatable {
     required this.total
   }) : _items = List.of(items);
 
-  static PaginatedList<T> fromJson<T>({
-    required Map<String, dynamic> map,
-    required T Function(Map<String, dynamic>) itemMapper,
-    int? page,
-  }) {
-    return PaginatedList(
-      items: (map["datas"] as Iterable).map((d) => itemMapper(d)),
-      page: page ?? 0,
-      total: map["totalElements"]
-    );
-  }
-
+  /// adds items at the end of the current list. You can set the current page
+  /// or total according to the data source
   PaginatedList<T> add({
     required Iterable<T> others,
     int? page,
@@ -41,6 +39,8 @@ class PaginatedList<T> extends Equatable {
     );
   }
 
+  /// adds items at the beginning of the current list. You can set the current page
+  /// or total according to the data source
   PaginatedList<T> prepend({
     required Iterable<T> others,
     int? page,
@@ -53,6 +53,9 @@ class PaginatedList<T> extends Equatable {
     );
   }
 
+  /// removes an item from the list. Set [update] to true in order to remove
+  /// one to the [total] value. Keep in mind that [total] tracks the length of
+  /// the remote list, so you might get inconsistencies when editing it
   PaginatedList<T> remove(
     T item,
     {bool update = false}

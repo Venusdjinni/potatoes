@@ -1,11 +1,14 @@
 import 'package:flutter/material.dart';
 
-// Rebuild child subtree
+/// A simple widget to rebuild the whole app tree from a [BuildContext].
+/// Wrap your main widget (typically "MyApp") with this and simply call
+/// Phoenix.rebirth(context) to rebuild the whole app.
 class Phoenix extends StatefulWidget {
   final Widget child;
 
   const Phoenix({super.key, required this.child});
 
+  /// rebuild the whole app from any point
   static void rebirth(BuildContext context) {
     final _PhoenixState? state = context.findAncestorStateOfType<_PhoenixState>();
 

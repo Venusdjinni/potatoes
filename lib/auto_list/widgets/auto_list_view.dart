@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
-import 'package:potatoes/bloc/list_cubit.dart';
+import 'package:potatoes/auto_list/bloc/auto_list_cubit.dart';
 
 enum ViewType {
   list,
@@ -13,7 +13,7 @@ enum DisplayMode {
   manual
 }
 
-class AutoLoadListView<T> extends StatefulWidget {
+class AutoListView<T> extends StatefulWidget {
   final ViewType viewType;
   final Widget Function(BuildContext context, Widget child)? wrapper;
   final Widget Function(BuildContext context, T item)? itemBuilder;
@@ -22,11 +22,16 @@ class AutoLoadListView<T> extends StatefulWidget {
   final DisplayMode displayMode;
   final Widget Function(BuildContext context, VoidCallback load)? manualLoadMoreBuilder;
   final double loadRatio;
+  /// Overrides the default loader
   final WidgetBuilder? loadingBuilder;
   final WidgetBuilder? loadingMoreBuilder;
   final WidgetBuilder? emptyBuilder;
+  /// Overrides the default error display
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
-  final Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder;
+  /// This builder renders whenever a new state type is created for the
+  /// [AutoListCubit]. New state types are created by overriding [AutoListState].
+  /// You may not use this if you only use [AutoListCubit] in its regular cases.
+  final Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder;
   final EdgeInsets? padding;
   final ScrollPhysics? physics;
   final bool reverse;
@@ -34,7 +39,7 @@ class AutoLoadListView<T> extends StatefulWidget {
   final bool shrinkWrap;
   final SliverGridDelegate? gridDelegate;
 
-  static Widget _init<T>(bool autoManage, AutoLoadCubit<T> cubit, Widget child) {
+  static Widget _init<T>(bool autoManage, AutoListCubit<T> cubit, Widget child) {
     if (autoManage) {
       return BlocProvider(
         create: (_) => cubit,
@@ -48,28 +53,35 @@ class AutoLoadListView<T> extends StatefulWidget {
     }
   }
 
+  /// Shows a [ListView] or a [GridView] displaying the current state of the
+  /// data list. When scrolled at more than [loadRatio], [AutoListCubit.loadMore]
+  /// is called to fetch the next page of data
   static Widget get<T>({
     ViewType viewType = ViewType.list,
-    required AutoLoadCubit<T> cubit,
+    required AutoListCubit<T> cubit,
+    /// whether or not the [AutoListCubit] should be disposed with this widget
     bool autoManage = true,
     Widget Function(BuildContext context, T item)? itemBuilder,
     Widget Function(BuildContext context, int index)? separatorBuilder,
     Widget Function(BuildContext context, Widget child)? wrapper,
     Widget Function(BuildContext context, List<T> items)? customBuilder,
+    /// grid delegate to display the list as a grid
     SliverGridDelegate? gridDelegate,
+    /// the threshold percentage of the list (of the [ScrollView]'s max extent)
+    /// at which the next page of data is loaded
     double loadRatio = 0.8,
     WidgetBuilder? loadingBuilder,
     WidgetBuilder? loadingMoreBuilder,
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
-    Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
+    Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
     EdgeInsets? padding,
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
     bool shrinkWrap = false
   }) {
-    final listView = AutoLoadListView._(
+    final listView = AutoListView._(
       viewType: viewType,
       itemBuilder: itemBuilder,
       separatorBuilder: separatorBuilder,
@@ -93,9 +105,11 @@ class AutoLoadListView<T> extends StatefulWidget {
     return _init(autoManage, cubit, listView);
   }
 
+  /// An [AutoListView] that does not automatically fetch next data. Call
+  /// [AutoListCubit.loadMore] to do so.
   static Widget manual<T>({
     ViewType viewType = ViewType.list,
-    required AutoLoadCubit<T> cubit,
+    required AutoListCubit<T> cubit,
     bool autoManage = true,
     Widget Function(BuildContext context, T item)? itemBuilder,
     Widget Function(BuildContext context, int index)? separatorBuilder,
@@ -107,14 +121,14 @@ class AutoLoadListView<T> extends StatefulWidget {
     WidgetBuilder? loadingMoreBuilder,
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
-    Widget Function(BuildContext context, AutoLoadState<T> state)? defaultBuilder,
+    Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
     EdgeInsets? padding,
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
     bool shrinkWrap = false
   }) {
-    final listView = AutoLoadListView._(
+    final listView = AutoListView._(
       viewType: viewType,
       itemBuilder: itemBuilder,
       separatorBuilder: separatorBuilder,
@@ -138,7 +152,7 @@ class AutoLoadListView<T> extends StatefulWidget {
     return _init(autoManage, cubit, listView);
   }
 
-  AutoLoadListView._({
+  AutoListView._({
     super.key,
     this.viewType = ViewType.list,
     required this.itemBuilder,
@@ -174,11 +188,11 @@ class AutoLoadListView<T> extends StatefulWidget {
   }
 
   @override
-  State<AutoLoadListView> createState() => _AutoLoadListViewState<T>();
+  State<AutoListView> createState() => _AutoListViewState<T>();
 }
 
-class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
-  late final AutoLoadCubit<T> cubit = context.read();
+class _AutoListViewState<T> extends State<AutoListView<T>> {
+  late final AutoListCubit<T> cubit = context.read();
 
   Widget contentView(List<T> items) {
     switch (widget.viewType) {
@@ -209,20 +223,20 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AutoLoadCubit<T>, AutoLoadState<T>>(
+    return BlocBuilder<AutoListCubit<T>, AutoListState<T>>(
         buildWhen: (_, state) {
-          return state is AutoLoadingState ||
-              state is AutoLoadedState ||
-              state is AutoLoadErrorState;
+          return state is AutoListLoadingState ||
+              state is AutoListReadyState ||
+              state is AutoListErrorState;
         },
         builder: (context, state) {
-          if (state is AutoLoadingState) {
+          if (state is AutoListLoadingState) {
             return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
           }
-          if (state is AutoLoadErrorState) {
+          if (state is AutoListErrorState) {
             return widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
           }
-          if (state is AutoLoadedState<T>) {
+          if (state is AutoListReadyState<T>) {
             final items = state.items;
 
             if (items.items.isEmpty) {
@@ -252,7 +266,7 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                     scrollDirection: widget.scrollDirection,
                     children: [
                       contentView(items.items),
-                      if (state is AutoLoadingMoreState)
+                      if (state is AutoListLoadingMoreState)
                         widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
                     ],
                   ),
@@ -267,9 +281,9 @@ class _AutoLoadListViewState<T> extends State<AutoLoadListView<T>> {
                   scrollDirection: widget.scrollDirection,
                   children: [
                     contentView(items.items),
-                    if (!state.items.hasReachedMax && state is! AutoLoadingMoreState)
+                    if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
                       widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
-                    if (state is AutoLoadingMoreState)
+                    if (state is AutoListLoadingMoreState)
                       widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
                   ],
                 );

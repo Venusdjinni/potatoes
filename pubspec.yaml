@@ -1,7 +1,10 @@
 name: potatoes
 description: Potatoes or french fries?
-version: 2.3.0
+version: 3.0.0
 homepage: https://www.caelis-tech.studio
+repository: https://github.com/Venusdjinni/potatoes
+issue_tracker: https://github.com/Venusdjinni/potatoes/issues
+topics: [bloc, boilerplate]
 
 environment:
   sdk: ">=3.0.0 <4.0.0"
@@ -10,20 +13,12 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.4.0
+  dio: ^5.4.3+1
   equatable: ^2.0.5
-  flutter_bloc: ^8.1.3
-  flutter_secure_storage: ^9.0.0
-  package_info_plus: ^4.1.0
-  shared_preferences: ^2.2.2
+  flutter_bloc: ^8.1.5
+  shared_preferences: ^2.2.3
 
 dev_dependencies:
   flutter_test:
     sdk: flutter
-  flutter_lints: ^2.0.3
-
-# For information on the generic Dart part of this file, see the
-# following page: https://dart.dev/tools/pub/pubspec
-
-# The following section is specific to Flutter packages.
-flutter:
+  flutter_lints: ^3.0.2

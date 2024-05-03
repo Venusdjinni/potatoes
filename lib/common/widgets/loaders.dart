@@ -2,7 +2,11 @@ import 'dart:async';
 
 import 'package:flutter/material.dart';
 
-mixin CompletableMixin {
+/// [CompletableMixin] is an extension allowing you to seamlessly add a whole
+/// screen loader to you app. Assign a value to [loadingDialogCompleter] to
+/// display your loader, then call [waitForDialog] in order to dismiss it.
+/// TODO example
+mixin CompletableMixin on State {
   Completer<BuildContext>? loadingDialogCompleter;
 
   Future<void> waitForDialog() async {
@@ -31,8 +35,8 @@ Completer<BuildContext> _showLoadingBarrier({
         completer.complete(context);
       }
 
-      return WillPopScope(
-        onWillPop: () async => false,
+      return PopScope(
+        canPop: false,
         child: decoration
           ? AlertDialog(
               content: Row(
@@ -41,7 +45,7 @@ Completer<BuildContext> _showLoadingBarrier({
                   const SizedBox(width: 32.0),
                   Expanded(
                     child: Text(
-                      text ?? "Chargement...",
+                      text ?? "Loading…",
                       style: Theme.of(context).textTheme.titleSmall
                     )
                   )
@@ -56,6 +60,9 @@ Completer<BuildContext> _showLoadingBarrier({
   return completer;
 }
 
+/// A simple loader that can be used in conjunction with [CompletableMixin].
+/// Displays a simple [AlertDialog] that covers the whole screen until dismissed.
+/// User cannot dismiss it from screen touch or back press.
 Completer<BuildContext> showLoadingBarrier({
   required BuildContext context,
   String? text
@@ -67,6 +74,9 @@ Completer<BuildContext> showLoadingBarrier({
   );
 }
 
+/// A simple loader that can be used in conjunction with [CompletableMixin].
+/// Displays a translucent barrier that covers the whole screen until dismissed.
+/// User cannot dismiss it from screen touch or back press.
 Completer<BuildContext> showSimpleLoadingBarrier({
   required BuildContext context
 }) {
