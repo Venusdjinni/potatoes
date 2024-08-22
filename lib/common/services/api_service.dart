@@ -158,7 +158,7 @@ abstract class ApiService {
 
   /// A [Dio] fetch call needs to be computed to extract data or resolve to
   /// an [ApiError]. You are responsible of your compute logic as it should
-  /// match with your needs. As an example, see TODO
+  /// match with your needs.
   Future<T> compute<T>(
     Future<Response> request, {
       String? mapperKey,

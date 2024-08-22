@@ -1,7 +1,7 @@
 name: potatoes
 description: Potatoes or french fries?
-version: 3.0.0
-homepage: https://www.caelis-tech.studio
+version: 3.0.1
+homepage: https://github.com/Venusdjinni/potatoes
 repository: https://github.com/Venusdjinni/potatoes
 issue_tracker: https://github.com/Venusdjinni/potatoes/issues
 topics: [bloc, boilerplate]

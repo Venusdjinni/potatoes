@@ -3,10 +3,9 @@ import 'dart:async';
 import 'package:flutter/material.dart';
 
 /// [CompletableMixin] is an extension allowing you to seamlessly add a whole
-/// screen loader to you app. Assign a value to [loadingDialogCompleter] to
+/// screen loader on your page. Assign a value to [loadingDialogCompleter] to
 /// display your loader, then call [waitForDialog] in order to dismiss it.
-/// TODO example
-mixin CompletableMixin on State {
+mixin CompletableMixin<T extends StatefulWidget> on State<T> {
   Completer<BuildContext>? loadingDialogCompleter;
 
   Future<void> waitForDialog() async {
