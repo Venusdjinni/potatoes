@@ -1,3 +1,7 @@
+## 3.0.2
+
+* Removed web imports from Dio
+
 ## 3.0.1
 
 * Added documentation and examples

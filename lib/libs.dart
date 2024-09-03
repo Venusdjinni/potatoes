@@ -1,6 +1,5 @@
 // exposes used libraries in order to use them without an additional import
 
-export 'package:dio/browser.dart';
 export 'package:dio/dio.dart';
 export 'package:dio/io.dart';
 
