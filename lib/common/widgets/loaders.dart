@@ -1,6 +1,7 @@
 import 'dart:async';
 
 import 'package:flutter/material.dart';
+import 'package:potatoes/common/models/message.dart';
 
 /// [CompletableMixin] is an extension allowing you to seamlessly add a whole
 /// screen loader on your page. Assign a value to [loadingDialogCompleter] to
@@ -44,7 +45,7 @@ Completer<BuildContext> _showLoadingBarrier({
                   const SizedBox(width: 32.0),
                   Expanded(
                     child: Text(
-                      text ?? "Loading…",
+                      text ?? PotatoesMessage.loading(context),
                       style: Theme.of(context).textTheme.titleSmall
                     )
                   )

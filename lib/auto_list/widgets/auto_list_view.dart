@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:potatoes/auto_list/bloc/auto_list_cubit.dart';
+import 'package:potatoes/common/models/message.dart';
 
 enum ViewType {
   list,
@@ -234,7 +235,8 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
             return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
           }
           if (state is AutoListErrorState) {
-            return widget.errorBuilder?.call(context, cubit.reset) ?? const Text('error occured');
+            return widget.errorBuilder?.call(context, cubit.reset)
+              ?? Text(PotatoesMessage.errorOccurred(context));
           }
           if (state is AutoListReadyState<T>) {
             final items = state.items;
