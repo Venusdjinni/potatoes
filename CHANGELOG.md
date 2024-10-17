@@ -1,3 +1,7 @@
+## 3.0.3
+
+* Added internationalization for default texts
+
 ## 3.0.2
 
 * Removed web imports from Dio
