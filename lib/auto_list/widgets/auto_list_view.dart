@@ -195,7 +195,7 @@ class AutoListView<T> extends StatefulWidget {
 class _AutoListViewState<T> extends State<AutoListView<T>> {
   late final AutoListCubit<T> cubit = context.read();
 
-  Widget contentView(List<T> items) {
+  Widget contentView(BuildContext context, List<T> items) {
     switch (widget.viewType) {
       case ViewType.list:
         return ListView.separated(
@@ -267,7 +267,7 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
                     reverse: widget.reverse,
                     scrollDirection: widget.scrollDirection,
                     children: [
-                      contentView(items.items),
+                      contentView(context, items.items),
                       if (state is AutoListLoadingMoreState)
                         widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
                     ],
@@ -282,7 +282,7 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
                   reverse: widget.reverse,
                   scrollDirection: widget.scrollDirection,
                   children: [
-                    contentView(items.items),
+                    contentView(context, items.items),
                     if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
                       widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
                     if (state is AutoListLoadingMoreState)
