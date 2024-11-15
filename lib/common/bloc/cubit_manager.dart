@@ -44,8 +44,14 @@ abstract class CubitManager<C extends Cubit, T, I> {
       // l'objet n'existe pas encore, on l'ajoute
       _cubits[id] = create(object);
     } else {
-      // la collection contient déjà cet identifiant, on le remplace
-      updateCubit(cubit, object);
+      // la collection contient déjà cet identifiant
+      if (cubit.isClosed) {
+        // le cubit n'est plus actif, on le remplace par un nouveau
+        remove(object);
+        add(object);
+      } else {
+        updateCubit(cubit, object);
+      }
     }
   }
 
