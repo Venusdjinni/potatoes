@@ -1,3 +1,8 @@
+## 3.0.5
+
+* Upgrade `equatable` to version ^2.0.7
+* Upgrade `shared_preferences` to version ^2.3.5
+
 ## 3.0.4
 
 * `CubitManager` now cleans closed cubits 
