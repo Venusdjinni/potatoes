@@ -1,3 +1,7 @@
+## 3.0.6
+
+* Introducing `SliverAutoListView` to support sliver lists
+
 ## 3.0.5
 
 * Upgrade `equatable` to version ^2.0.7
