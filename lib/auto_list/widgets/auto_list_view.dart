@@ -45,6 +45,8 @@ class AutoListView<T> extends StatefulWidget {
   final bool shrinkWrap;
   final SliverGridDelegate? gridDelegate;
 
+  final ScrollController? scrollController;
+
   static Widget _init<T>(bool autoManage, AutoListCubit<T> cubit, Widget child) {
     if (autoManage) {
       return BlocProvider(
@@ -67,6 +69,7 @@ class AutoListView<T> extends StatefulWidget {
     required AutoListCubit<T> cubit,
     /// whether or not the [AutoListCubit] should be disposed with this widget
     bool autoManage = true,
+    ScrollController? scrollController,
     Widget Function(BuildContext context, T item)? itemBuilder,
     Widget Function(BuildContext context, int index)? separatorBuilder,
     Widget Function(BuildContext context, Widget child)? wrapper,
@@ -85,10 +88,11 @@ class AutoListView<T> extends StatefulWidget {
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
-    bool shrinkWrap = false
+    bool shrinkWrap = false,
   }) {
     final listView = AutoListView._(
       viewType: viewType,
+      scrollController: scrollController,
       itemBuilder: itemBuilder,
       separatorBuilder: separatorBuilder,
       wrapper: wrapper,
@@ -117,6 +121,7 @@ class AutoListView<T> extends StatefulWidget {
     ViewType viewType = ViewType.list,
     required AutoListCubit<T> cubit,
     bool autoManage = true,
+    ScrollController? scrollController,
     Widget Function(BuildContext context, T item)? itemBuilder,
     Widget Function(BuildContext context, int index)? separatorBuilder,
     Widget Function(BuildContext context, Widget child)? wrapper,
@@ -136,6 +141,7 @@ class AutoListView<T> extends StatefulWidget {
   }) {
     final listView = AutoListView._(
       viewType: viewType,
+      scrollController: scrollController,
       itemBuilder: itemBuilder,
       separatorBuilder: separatorBuilder,
       wrapper: wrapper,
@@ -178,7 +184,8 @@ class AutoListView<T> extends StatefulWidget {
     this.reverse = false,
     this.scrollDirection = Axis.vertical,
     this.shrinkWrap = false,
-    this.gridDelegate
+    this.gridDelegate,
+    this.scrollController
   }) {
     assert(0 < loadRatio && loadRatio <= 1);
     if (displayMode == DisplayMode.manual) {
@@ -266,6 +273,7 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
                     return false;
                   },
                   child: ListView(
+                    controller: widget.scrollController,
                     padding: widget.padding,
                     physics: widget.physics,
                     shrinkWrap: widget.shrinkWrap,
@@ -281,6 +289,7 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
                 break;
               case DisplayMode.manual:
                 child = ListView(
+                  controller: widget.scrollController,
                   padding: widget.padding,
                   physics: widget.physics,
                   shrinkWrap: widget.shrinkWrap,

@@ -1,3 +1,7 @@
+## 3.0.7
+
+* Adding a `ScrollController` parameter to AutoListView constructors
+
 ## 3.0.6
 
 * Introducing `SliverAutoListView` to support sliver lists
