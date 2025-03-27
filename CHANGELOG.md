@@ -1,3 +1,7 @@
+## 3.0.7+1
+
+* `ApiService` now throw an exception when `_getAuth`method fails
+
 ## 3.0.7
 
 * Adding a `ScrollController` parameter to AutoListView constructors

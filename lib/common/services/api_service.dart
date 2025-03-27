@@ -97,7 +97,16 @@ class _AuthorizationInterceptor extends Interceptor {
   @override
   void onRequest(RequestOptions options, RequestInterceptorHandler handler) async {
     if (options.headers.containsKey(_authHeaderIndicator)) {
-      options.headers.addAll(await _getAuth());
+      try {
+        options.headers.addAll(await _getAuth());
+      } catch (exception, trace) {
+        return handler.reject(DioException(
+          requestOptions: options,
+          error: exception,
+          stackTrace: trace,
+          message: "Error occurred during authentication headers injection"
+        ));
+      }
     }
     return super.onRequest(options, handler);
   }
