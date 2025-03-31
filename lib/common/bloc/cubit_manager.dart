@@ -74,16 +74,23 @@ abstract class CubitManager<C extends Cubit, T, I> {
     }
   }
 
-  /// returns the cubit bound to the given object.
+  /// returns the cubit identified by this id.
   /// Throws an [UnsupportedError] if no cubit found. You should register new
   /// objects by using [add] before trying to get them
-  C get(T object) {
-    final id = buildId(object);
+  C getById(I id) {
     final cubit = _cubits[id];
     if (cubit == null) {
       throw UnsupportedError("$C not found for $T id $id");
     }
     return cubit;
+  }
+
+  /// returns the cubit bound to the given object.
+  /// Throws an [UnsupportedError] if no cubit found. You should register new
+  /// objects by using [add] before trying to get them
+  C get(T object) {
+    final id = buildId(object);
+    return getById(id);
   }
 
   /// closes all cubits tracked and releases memory. Use this as a dispose method

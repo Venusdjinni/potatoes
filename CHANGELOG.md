@@ -1,3 +1,7 @@
+## 3.0.8
+
+* Added a `getById` feature for `CubitManager`
+
 ## 3.0.7+1
 
 * `ApiService` now throw an exception when `_getAuth`method fails
