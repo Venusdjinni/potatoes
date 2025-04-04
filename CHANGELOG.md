@@ -1,3 +1,5 @@
+## 3.0.8+1
+
 ## 3.0.8
 
 * Added a `getById` feature for `CubitManager`

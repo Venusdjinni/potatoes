@@ -17,7 +17,7 @@ class PaginatedList<T> extends Equatable {
   List<T> get items => UnmodifiableListView(_items);
 
   /// whether the local list is the same length as the remote list
-  bool get hasReachedMax => items.length == total;
+  bool get hasReachedMax => items.length >= total;
 
   PaginatedList({
     required Iterable<T> items,
