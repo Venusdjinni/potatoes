@@ -31,6 +31,12 @@ class AutoListLoadingMoreState<T> extends AutoListReadyState<T> {
   const AutoListLoadingMoreState(super.items);
 }
 
+class AutoListLoadingMoreErrorState<T> extends AutoListReadyState<T> {
+  final AutoListErrorState<T> errorState;
+
+  const AutoListLoadingMoreErrorState(super.items, this.errorState);
+}
+
 class AutoListErrorState<T> extends CubitErrorState with AutoListState<T> {
   AutoListErrorState(super.error, [super.trace]);
 }

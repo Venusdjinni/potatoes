@@ -1,6 +1,6 @@
 name: potatoes
 description: Potatoes or french fries?
-version: 3.0.8+1
+version: 3.1.0
 homepage: https://github.com/Venusdjinni/potatoes
 repository: https://github.com/Venusdjinni/potatoes
 issue_tracker: https://github.com/Venusdjinni/potatoes/issues
@@ -13,10 +13,10 @@ environment:
 dependencies:
   flutter:
     sdk: flutter
-  dio: ^5.7.0
+  dio: ^5.8.0+1
   equatable: ^2.0.7
-  flutter_bloc: ^8.1.6
-  shared_preferences: ^2.3.5
+  flutter_bloc: ^9.1.1
+  shared_preferences: ^2.5.3
 
 dev_dependencies:
   flutter_test:

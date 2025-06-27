@@ -1,4 +1,15 @@
+# 3.1.0
+
+* `AutoListCubit` and `AutoContentCubit` now better catch errors. Some errors were not caught when
+the provider threw an exception without returning a future/stream.
+* `AutoListView` no longer displays errorBuilder when an error occurs after an initial `AutoListReadyState`.
+Errors will now be sent to `onLoadingMoreError` callback.
+* Added an optional `Key` parameter to AutoListView and AutoContentView constructors
+* Upgraded dio, flutter_bloc and shared_preferences to latest versions
+
 ## 3.0.8+1
+
+* Updated `PaginatedList.hasReachedMax` condition from `items.length >= total` to `items.length >= total`
 
 ## 3.0.8
 

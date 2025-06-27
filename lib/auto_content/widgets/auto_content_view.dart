@@ -17,6 +17,7 @@ class AutoContentView<T> extends StatefulWidget {
   final Widget Function(BuildContext context, VoidCallback retry)? errorBuilder;
 
   static Widget get<T>({
+    Key? key,
     /// The [AutoContentCubit] tracked to display loading states
     required AutoContentCubit<T> cubit,
     /// whether or not the [AutoContentCubit] should be disposed with this widget
@@ -35,11 +36,13 @@ class AutoContentView<T> extends StatefulWidget {
 
     if (autoManage) {
       return BlocProvider(
+        key: key,
         create: (_) => cubit,
         child: listView,
       );
     } else {
       return BlocProvider.value(
+        key: key,
         value: cubit,
         child: listView,
       );

@@ -19,11 +19,13 @@ class AutoContentCubit<T> extends Cubit<AutoContentState<T>> {
   }
 
   @protected
-  void initialize() {
-    provider().then(
-      (result) => emit(AutoContentReadyState(result)),
-      onError: (e, t) => emit(AutoContentErrorState(e, t))
-    );
+  void initialize() async {
+    try {
+      final result = await provider();
+      emit(AutoContentReadyState(result));
+    } catch (e, t) {
+      emit(AutoContentErrorState(e, t));
+    }
   }
 
   /// reloads the cubit to its initial state

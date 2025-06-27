@@ -50,10 +50,14 @@ class AutoListCubit<T> extends Cubit<AutoListState<T>> {
     void onSuccess(result) => emit(AutoListReadyState(result));
     void onError(e, t) => emit(AutoListErrorState(e, t));
 
-    if (provider is DataProvider<T>) {
-      (provider as DataProvider).call().then(onSuccess, onError: onError);
-    } else if (provider is StreamDataProvider) {
-      (provider as StreamDataProvider).call().listen(onSuccess, onError: onError);
+    try {
+      if (provider is DataProvider<T>) {
+        (provider as DataProvider).call().then(onSuccess, onError: onError);
+      } else if (provider is StreamDataProvider) {
+        (provider as StreamDataProvider).call().listen(onSuccess, onError: onError);
+      }
+    } catch (error, trace) {
+      onError(error, trace);
     }
   }
 
@@ -78,16 +82,26 @@ class AutoListCubit<T> extends Cubit<AutoListState<T>> {
         page: result.page,
         total: result.total
       ));
-      void onError(e, t) => emit(AutoListErrorState(e, t));
+      void onError(e, t) {
+        emit(AutoListLoadingMoreErrorState(
+          stateBefore.items,
+          AutoListErrorState(e, t)
+        ));
+      }
 
-      if (provider is DataProvider) {
-        (provider as DataProvider)
-          .call(page: stateBefore.items.page + 1)
-          .then(onSuccess, onError: onError);
-      } else if (provider is StreamDataProvider) {
-        (provider as StreamDataProvider)
-          .call(page: stateBefore.items.page + 1)
-          .listen(onSuccess, onError: onError);
+      try {
+        if (provider is DataProvider) {
+          (provider as DataProvider)
+            .call(page: stateBefore.items.page + 1)
+            .then(onSuccess, onError: onError);
+        } else if (provider is StreamDataProvider) {
+          (provider as StreamDataProvider)
+            .call(page: stateBefore.items.page + 1)
+            .listen(onSuccess, onError: onError);
+        }
+      } catch (error, trace) {
+        print('>>>>>>');
+        onError(error, trace);
       }
     }
   }

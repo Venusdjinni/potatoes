@@ -38,6 +38,8 @@ class AutoListView<T> extends StatefulWidget {
   /// [AutoListCubit]. New state types are created by overriding [AutoListState].
   /// You may not use this if you only use [AutoListCubit] in its regular cases.
   final Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder;
+  /// Callback fired when an [AutoListErrorState] error occurs
+  final Function(BuildContext context, AutoListErrorState<T> errorState)? onLoadingMoreError;
   final EdgeInsets? padding;
   final ScrollPhysics? physics;
   final bool reverse;
@@ -47,14 +49,21 @@ class AutoListView<T> extends StatefulWidget {
 
   final ScrollController? scrollController;
 
-  static Widget _init<T>(bool autoManage, AutoListCubit<T> cubit, Widget child) {
+  static Widget _init<T>(
+    Key? key,
+    bool autoManage,
+    AutoListCubit<T> cubit,
+    Widget child
+  ) {
     if (autoManage) {
       return BlocProvider(
+        key: key,
         create: (_) => cubit,
         child: child,
       );
     } else {
       return BlocProvider.value(
+        key: key,
         value: cubit,
         child: child,
       );
@@ -65,6 +74,7 @@ class AutoListView<T> extends StatefulWidget {
   /// data list. When scrolled at more than [loadRatio], [AutoListCubit.loadMore]
   /// is called to fetch the next page of data
   static Widget get<T>({
+    Key? key,
     ViewType viewType = ViewType.list,
     required AutoListCubit<T> cubit,
     /// whether or not the [AutoListCubit] should be disposed with this widget
@@ -84,6 +94,7 @@ class AutoListView<T> extends StatefulWidget {
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
+    Function(BuildContext context, AutoListErrorState errorState)? onLoadingMoreError,
     EdgeInsets? padding,
     ScrollPhysics? physics,
     bool reverse = false,
@@ -104,6 +115,7 @@ class AutoListView<T> extends StatefulWidget {
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
+      onLoadingMoreError: onLoadingMoreError,
       padding: padding,
       physics: physics,
       reverse: reverse,
@@ -112,12 +124,13 @@ class AutoListView<T> extends StatefulWidget {
       gridDelegate: gridDelegate,
     );
 
-    return _init(autoManage, cubit, listView);
+    return _init(key, autoManage, cubit, listView);
   }
 
   /// An [AutoListView] that does not automatically fetch next data. Call
   /// [AutoListCubit.loadMore] to do so.
   static Widget manual<T>({
+    Key? key,
     ViewType viewType = ViewType.list,
     required AutoListCubit<T> cubit,
     bool autoManage = true,
@@ -133,6 +146,7 @@ class AutoListView<T> extends StatefulWidget {
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
+    Function(BuildContext context, AutoListErrorState<T> errorState)? onLoadingMoreError,
     EdgeInsets? padding,
     ScrollPhysics? physics,
     bool reverse = false,
@@ -153,6 +167,7 @@ class AutoListView<T> extends StatefulWidget {
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
+      onLoadingMoreError: onLoadingMoreError,
       padding: padding,
       physics: physics,
       reverse: reverse,
@@ -161,7 +176,7 @@ class AutoListView<T> extends StatefulWidget {
       gridDelegate: gridDelegate,
     );
 
-    return _init(autoManage, cubit, listView);
+    return _init(key, autoManage, cubit, listView);
   }
 
   AutoListView._({
@@ -179,6 +194,7 @@ class AutoListView<T> extends StatefulWidget {
     this.emptyBuilder,
     this.errorBuilder,
     this.defaultBuilder,
+    this.onLoadingMoreError,
     this.padding,
     this.physics,
     this.reverse = false,
@@ -236,59 +252,55 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AutoListCubit<T>, AutoListState<T>>(
-        buildWhen: (_, state) {
-          return state is AutoListLoadingState ||
-              state is AutoListReadyState ||
-              state is AutoListErrorState;
-        },
-        builder: (context, state) {
-          if (state is AutoListLoadingState) {
-            return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
-          }
-          if (state is AutoListErrorState) {
-            return widget.errorBuilder?.call(context, cubit.reset)
-              ?? Text(PotatoesMessage.errorOccurred(context));
-          }
-          if (state is AutoListReadyState<T>) {
-            final items = state.items;
+    return BlocConsumer<AutoListCubit<T>, AutoListState<T>>(
+      listener: (context, state) {
+        if (state is AutoListLoadingMoreErrorState<T>) {
+          widget.onLoadingMoreError?.call(context, state.errorState);
+        }
+      },
+      buildWhen: (_, state) {
+        return state is AutoListLoadingState ||
+          state is AutoListReadyState ||
+          state is AutoListErrorState;
+      },
+      builder: (context, state) {
+        if (state is AutoListLoadingState) {
+          return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
+        }
+        if (state is AutoListErrorState) {
+          return widget.errorBuilder?.call(context, cubit.reset)
+            ?? Text(PotatoesMessage.errorOccurred(context));
+        }
+        if (state is AutoListReadyState<T>) {
+          final items = state.items;
 
-            if (items.items.isEmpty) {
-              final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
-              return widget.wrapper?.call(context, child) ?? child;
-            }
-            final Widget child;
+          if (items.items.isEmpty) {
+            final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
+            return widget.wrapper?.call(context, child) ?? child;
+          }
+          final Widget child;
 
-            switch (widget.displayMode) {
-              case DisplayMode.auto:
-                child = NotificationListener<ScrollNotification>(
-                  onNotification: (n) {
-                    final maxScroll = n.metrics.maxScrollExtent;
-                    if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
-                      // chargement d'élements supplémentaires
+          switch (widget.displayMode) {
+            case DisplayMode.auto:
+              child = NotificationListener<ScrollNotification>(
+                onNotification: (n) {
+                  final maxScroll = n.metrics.maxScrollExtent;
+                  if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
+                    // if we got an error while loading next items, we want to loose the
+                    // scroll trigger condition to respond only on scroll end
+                    if (state is AutoListLoadingMoreErrorState) {
+                      if (n is ScrollEndNotification) {
+                        cubit.loadMore();
+                      }
+                    } else {
                       cubit.loadMore();
                     }
-                    // we don't want to cancel notification bubbling, since
-                    // upper widgets may want to listen to events
-                    return false;
-                  },
-                  child: ListView(
-                    controller: widget.scrollController,
-                    padding: widget.padding,
-                    physics: widget.physics,
-                    shrinkWrap: widget.shrinkWrap,
-                    reverse: widget.reverse,
-                    scrollDirection: widget.scrollDirection,
-                    children: [
-                      contentView(context, items.items),
-                      if (state is AutoListLoadingMoreState)
-                        widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
-                    ],
-                  ),
-                );
-                break;
-              case DisplayMode.manual:
-                child = ListView(
+                  }
+                  // we don't want to cancel notification bubbling, since
+                  // upper widgets may want to listen to events
+                  return false;
+                },
+                child: ListView(
                   controller: widget.scrollController,
                   padding: widget.padding,
                   physics: widget.physics,
@@ -297,21 +309,37 @@ class _AutoListViewState<T> extends State<AutoListView<T>> {
                   scrollDirection: widget.scrollDirection,
                   children: [
                     contentView(context, items.items),
-                    if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
-                      widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
                     if (state is AutoListLoadingMoreState)
                       widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
                   ],
-                );
-                break;
-            }
-
-            return widget.wrapper?.call(context, child) ?? child;
+                ),
+              );
+              break;
+            case DisplayMode.manual:
+              child = ListView(
+                controller: widget.scrollController,
+                padding: widget.padding,
+                physics: widget.physics,
+                shrinkWrap: widget.shrinkWrap,
+                reverse: widget.reverse,
+                scrollDirection: widget.scrollDirection,
+                children: [
+                  contentView(context, items.items),
+                  if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
+                    widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
+                  if (state is AutoListLoadingMoreState)
+                    widget.loadingMoreBuilder?.call(context) ?? const Center(child: CircularProgressIndicator()),
+                ],
+              );
+              break;
           }
 
-          final defaultWidget = widget.defaultBuilder?.call(context, state) ?? const SizedBox();
-          return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
+          return widget.wrapper?.call(context, child) ?? child;
         }
+
+        final defaultWidget = widget.defaultBuilder?.call(context, state) ?? const SizedBox();
+        return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
+      }
     );
   }
 }
@@ -334,19 +362,28 @@ class SliverAutoListView<T> extends StatefulWidget {
   /// [AutoListCubit]. New state types are created by overriding [AutoListState].
   /// You may not use this if you only use [AutoListCubit] in its regular cases.
   final Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder;
+  /// Callback fired when an [AutoListErrorState] error occurs
+  final Function(BuildContext context, AutoListErrorState<T> errorState)? onLoadingMoreError;
   final ScrollPhysics? physics;
   final bool reverse;
   final Axis scrollDirection;
   final bool shrinkWrap;
 
-  static Widget _init<T>(bool autoManage, AutoListCubit<T> cubit, Widget child) {
+  static Widget _init<T>(
+    Key? key,
+    bool autoManage,
+    AutoListCubit<T> cubit,
+    Widget child
+  ) {
     if (autoManage) {
       return BlocProvider(
+        key: key,
         create: (_) => cubit,
         child: child,
       );
     } else {
       return BlocProvider.value(
+        key: key,
         value: cubit,
         child: child,
       );
@@ -358,6 +395,7 @@ class SliverAutoListView<T> extends StatefulWidget {
   /// When scrolled at more than [loadRatio], [AutoListCubit.loadMore]
   /// is called to fetch the next page of data
   static Widget get<T>({
+    Key? key,
     SliverViewType viewType = SliverViewType.list,
     required AutoListCubit<T> cubit,
     /// whether or not the [AutoListCubit] should be disposed with this widget
@@ -373,6 +411,7 @@ class SliverAutoListView<T> extends StatefulWidget {
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
+    Function(BuildContext context, AutoListErrorState<T> errorState)? onLoadingMoreError,
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
@@ -390,19 +429,21 @@ class SliverAutoListView<T> extends StatefulWidget {
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
+      onLoadingMoreError: onLoadingMoreError,
       physics: physics,
       reverse: reverse,
       scrollDirection: scrollDirection,
       shrinkWrap: shrinkWrap,
     );
 
-    return _init(autoManage, cubit, listView);
+    return _init(key, autoManage, cubit, listView);
   }
 
   /// A [SliverAutoListView] that does not automatically fetch next data.
   /// Every item in the builder must be a sliver.
   /// Call [AutoListCubit.loadMore] to do so.
   static Widget manual<T>({
+    Key? key,
     SliverViewType viewType = SliverViewType.list,
     required AutoListCubit<T> cubit,
     bool autoManage = true,
@@ -416,6 +457,7 @@ class SliverAutoListView<T> extends StatefulWidget {
     WidgetBuilder? emptyBuilder,
     Widget Function(BuildContext context, VoidCallback retry)? errorBuilder,
     Widget Function(BuildContext context, AutoListState<T> state)? defaultBuilder,
+    Function(BuildContext context, AutoListErrorState<T> errorState)? onLoadingMoreError,
     ScrollPhysics? physics,
     bool reverse = false,
     Axis scrollDirection = Axis.vertical,
@@ -433,13 +475,14 @@ class SliverAutoListView<T> extends StatefulWidget {
       emptyBuilder: emptyBuilder,
       errorBuilder: errorBuilder,
       defaultBuilder: defaultBuilder,
+      onLoadingMoreError: onLoadingMoreError,
       physics: physics,
       reverse: reverse,
       scrollDirection: scrollDirection,
       shrinkWrap: shrinkWrap,
     );
 
-    return _init(autoManage, cubit, listView);
+    return _init(key, autoManage, cubit, listView);
   }
 
   SliverAutoListView._({
@@ -456,6 +499,7 @@ class SliverAutoListView<T> extends StatefulWidget {
     this.emptyBuilder,
     this.errorBuilder,
     this.defaultBuilder,
+    this.onLoadingMoreError,
     this.physics,
     this.reverse = false,
     this.scrollDirection = Axis.vertical,
@@ -485,86 +529,98 @@ class _SliverAutoListViewState<T> extends State<SliverAutoListView<T>> {
 
   @override
   Widget build(BuildContext context) {
-    return BlocBuilder<AutoListCubit<T>, AutoListState<T>>(
-        buildWhen: (_, state) {
-          return state is AutoListLoadingState ||
-              state is AutoListReadyState ||
-              state is AutoListErrorState;
-        },
-        builder: (context, state) {
-          if (state is AutoListLoadingState) {
-            return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
-          }
-          if (state is AutoListErrorState) {
-            return widget.errorBuilder?.call(context, cubit.reset)
-                ?? Text(PotatoesMessage.errorOccurred(context));
-          }
-          if (state is AutoListReadyState<T>) {
-            final items = state.items;
+    return BlocConsumer<AutoListCubit<T>, AutoListState<T>>(
+      listener: (context, state) {
+        if (state is AutoListLoadingMoreErrorState<T>) {
+          widget.onLoadingMoreError?.call(context, state.errorState);
+        }
+      },
+      buildWhen: (_, state) {
+        return state is AutoListLoadingState ||
+          state is AutoListReadyState ||
+          state is AutoListErrorState;
+      },
+      builder: (context, state) {
+        if (state is AutoListLoadingState) {
+          return widget.loadingBuilder?.call(context) ?? const Center(child: CircularProgressIndicator());
+        }
+        if (state is AutoListErrorState) {
+          return widget.errorBuilder?.call(context, cubit.reset)
+              ?? Text(PotatoesMessage.errorOccurred(context));
+        }
+        if (state is AutoListReadyState<T>) {
+          final items = state.items;
 
-            if (items.items.isEmpty) {
-              final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
-              return widget.wrapper?.call(context, child) ?? child;
-            }
-            final Widget child;
+          if (items.items.isEmpty) {
+            final child = widget.emptyBuilder?.call(context) ?? const SizedBox();
+            return widget.wrapper?.call(context, child) ?? child;
+          }
+          final Widget child;
 
-            switch (widget.displayMode) {
-              case DisplayMode.auto:
-                child = NotificationListener<ScrollNotification>(
-                  onNotification: (n) {
-                    final maxScroll = n.metrics.maxScrollExtent;
-                    if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
-                      // chargement d'élements supplémentaires
+          switch (widget.displayMode) {
+            case DisplayMode.auto:
+              child = NotificationListener<ScrollNotification>(
+                onNotification: (n) {
+                  final maxScroll = n.metrics.maxScrollExtent;
+                  if (n.metrics.pixels >= (maxScroll * widget.loadRatio)) {
+                    // if we got an error while loading next items, we want to loose the
+                    // scroll trigger condition to respond only on scroll end
+                    if (state is AutoListLoadingMoreErrorState) {
+                      if (n is ScrollEndNotification) {
+                        cubit.loadMore();
+                      }
+                    } else {
                       cubit.loadMore();
                     }
-                    // we don't want to cancel notification bubbling, since
-                    // upper widgets may want to listen to events
-                    return false;
-                  },
-                  child: CustomScrollView(
-                    physics: widget.physics,
-                    shrinkWrap: widget.shrinkWrap,
-                    scrollDirection: widget.scrollDirection,
-                    reverse: widget.reverse,
-                    slivers: [
-                      ...contentView(context, items.items),
-                      if (state is AutoListLoadingMoreState)
-                        SliverToBoxAdapter(
-                          child: widget.loadingMoreBuilder?.call(context)
-                            ?? const Center(child: CircularProgressIndicator()),
-                        ),
-                    ],
-                  ),
-                );
-                break;
-              case DisplayMode.manual:
-                child = CustomScrollView(
+                  }
+                  // we don't want to cancel notification bubbling, since
+                  // upper widgets may want to listen to events
+                  return false;
+                },
+                child: CustomScrollView(
                   physics: widget.physics,
                   shrinkWrap: widget.shrinkWrap,
                   scrollDirection: widget.scrollDirection,
                   reverse: widget.reverse,
                   slivers: [
                     ...contentView(context, items.items),
-                    if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
-                      SliverToBoxAdapter(
-                        child: widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
-                      ),
                     if (state is AutoListLoadingMoreState)
                       SliverToBoxAdapter(
                         child: widget.loadingMoreBuilder?.call(context)
                           ?? const Center(child: CircularProgressIndicator()),
                       ),
                   ],
-                );
-                break;
-            }
-
-            return widget.wrapper?.call(context, child) ?? child;
+                ),
+              );
+              break;
+            case DisplayMode.manual:
+              child = CustomScrollView(
+                physics: widget.physics,
+                shrinkWrap: widget.shrinkWrap,
+                scrollDirection: widget.scrollDirection,
+                reverse: widget.reverse,
+                slivers: [
+                  ...contentView(context, items.items),
+                  if (!state.items.hasReachedMax && state is! AutoListLoadingMoreState)
+                    SliverToBoxAdapter(
+                      child: widget.manualLoadMoreBuilder!.call(context, cubit.loadMore),
+                    ),
+                  if (state is AutoListLoadingMoreState)
+                    SliverToBoxAdapter(
+                      child: widget.loadingMoreBuilder?.call(context)
+                        ?? const Center(child: CircularProgressIndicator()),
+                    ),
+                ],
+              );
+              break;
           }
 
-          final defaultWidget = widget.defaultBuilder?.call(context, state) ?? const SizedBox();
-          return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
+          return widget.wrapper?.call(context, child) ?? child;
         }
+
+        final defaultWidget = widget.defaultBuilder?.call(context, state) ?? const SizedBox();
+        return widget.wrapper?.call(context, defaultWidget) ?? defaultWidget;
+      }
     );
   }
 }
